@@ -9,7 +9,7 @@ steps:
     args: ['-c', 'npm run build']
     dir: 'client'
  
-  # Step 3: Deploy to App Engine
+ 
   - name: 'gcr.io/cloud-builders/gcloud'
     args: ['app', 'deploy','clientAppEngine.yaml']
  
