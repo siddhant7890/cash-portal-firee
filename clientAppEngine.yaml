@@ -1,0 +1,16 @@
+runtime: nodejs22
+# Prod
+service: default
+
+# Test
+# service: ecom
+env: standard
+
+entrypoint: npm start
+
+env_variables:
+  NODE_ENV: production
+
+handlers:
+  - url: /.*
+    script: auto
