@@ -1,6 +1,6 @@
 runtime: nodejs22
 # Prod
-service: default
+service: cashportal
 
 # Test
 # service: ecom

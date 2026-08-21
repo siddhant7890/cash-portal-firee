@@ -13,3 +13,10 @@
 npm-debug.log*
 .vscode/
 .idea/
+node_modules/
+.next/
+dist/
+.env
+.env.local
+.env.production
+.env.*.localgit add -A
