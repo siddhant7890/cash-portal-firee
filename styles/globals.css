@@ -1,0 +1,641 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap");
+
+:root {
+  --night: #1e1633;
+  --night-soft: #2c2245;
+  --paper: #fbf7f1;
+  --surface: #ffffff;
+  --ink: #211823;
+  --ink-soft: #6e6272;
+  --ink-faint: #a79eaa;
+  --hairline: #e7dfd6;
+  --ember: #d8602c;
+  --ember-dark: #b94d1f;
+  --gold: #c0912e;
+  --gold-soft: #f3e4c2;
+  --upi: #3d5ac2;
+  --upi-soft: #e6eafb;
+  --success: #3c7a52;
+  --success-soft: #e1efe3;
+  --danger: #b23a2e;
+  --danger-soft: #f7e4e0;
+  --pending: #b5892e;
+  --pending-soft: #f7efda;
+
+  --bs-body-font-family: "Inter", sans-serif;
+  --bs-body-bg: var(--paper);
+  --bs-body-color: var(--ink);
+  --bs-primary: var(--ember);
+  --bs-border-color: var(--hairline);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Inter", sans-serif;
+}
+.font-display {
+  font-family: "Fraunces", serif;
+}
+.mono {
+  font-family: "IBM Plex Mono", monospace;
+}
+a {
+  text-decoration: none;
+}
+svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* ---------- Layout shell ---------- */
+.sf-shell {
+  display: flex;
+  min-height: 100vh;
+}
+.sf-sidebar {
+  width: 224px;
+  flex-shrink: 0;
+  background: var(--night);
+  color: #ede7f5;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.sf-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+}
+.sf-brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  padding: 2px;
+}
+.sf-brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+}
+.sf-brand-name {
+  font-family: "Fraunces", serif;
+  font-weight: 600;
+  font-size: 16.5px;
+  line-height: 1.15;
+  color: #fff;
+}
+.sf-brand-sub {
+  font-size: 11px;
+  color: #b7acc9;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.sf-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sf-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #c9bfda;
+  background: var(--night-soft);
+  border: none;
+  box-shadow: inset 3px 0 0 var(--ember);
+}
+.sf-nav-item svg {
+  width: 17px;
+  height: 17px;
+  opacity: 0.85;
+}
+.sf-badge-count {
+  margin-left: auto;
+  background: var(--ember);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+.sf-sidebar-foot {
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sf-who-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sf-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--gold-soft);
+  color: #5f4413;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sf-who {
+  font-size: 13px;
+  font-weight: 500;
+  color: #ede7f5;
+}
+.sf-role {
+  font-size: 11.5px;
+  color: #9c90b4;
+}
+.sf-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13.5px;
+  color: #d9a0a0;
+  padding: 9px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+.sf-logout-btn:hover {
+  background: rgba(178, 58, 46, 0.15);
+}
+.sf-logout-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sf-main {
+  flex: 1;
+  padding: 22px 32px 40px;
+  max-width: 1100px;
+  min-width: 0;
+}
+.sf-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sf-eyebrow {
+  font-size: 12px;
+  color: var(--ink-soft);
+  letter-spacing: 0.03em;
+  margin-bottom: 2px;
+}
+.sf-topbar h1 {
+  font-family: "Fraunces", serif;
+  font-weight: 600;
+  font-size: 22px;
+  margin: 0;
+}
+
+@media (max-width: 767.98px) {
+  .sf-shell {
+    flex-direction: column;
+  }
+  .sf-sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 16px;
+  }
+  .sf-nav {
+    flex-direction: row;
+  }
+  .sf-sidebar-foot {
+    margin-top: 0;
+    margin-left: auto;
+    border-top: none;
+    flex-direction: row;
+    align-items: center;
+    padding-top: 0;
+  }
+  .sf-main {
+    padding: 16px 16px 32px;
+  }
+}
+
+/* ---------- Buttons ---------- */
+.sf-btn {
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.sf-btn svg {
+  width: 15px;
+  height: 15px;
+}
+.sf-btn:hover {
+  border-color: var(--ink-faint);
+}
+.sf-btn.sf-btn-primary {
+  background: var(--ember);
+  border-color: var(--ember-dark);
+  color: #fff;
+}
+.sf-btn.sf-btn-primary:hover {
+  background: var(--ember-dark);
+}
+.sf-btn.sf-btn-cash {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+.sf-btn.sf-btn-upi {
+  background: var(--upi);
+  border-color: var(--upi);
+  color: #fff;
+}
+.sf-btn.sf-btn-sm {
+  padding: 6px 11px;
+  font-size: 12.5px;
+}
+.sf-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ---------- Panels / tables ---------- */
+.sf-panel {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 18px;
+}
+.sf-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sf-table {
+  width: 100%;
+  font-size: 13px;
+}
+.sf-table thead th {
+  text-align: left;
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 10px 10px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--hairline);
+  white-space: nowrap;
+}
+.sf-table tbody td {
+  padding: 11px 10px;
+  border-bottom: 1px solid var(--hairline);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.sf-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.sf-table-wrap {
+  overflow-x: auto;
+}
+
+/* ---------- Pills / badges ---------- */
+.sf-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+.sf-status-pill .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.sf-status-pill.pending {
+  background: var(--pending-soft);
+  color: var(--pending);
+}
+.sf-status-pill.cash {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.sf-status-pill.upi {
+  background: var(--upi-soft);
+  color: var(--upi);
+}
+.sf-review-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: var(--upi-soft);
+  color: var(--upi);
+}
+
+/* ---------- Cash counter queue ---------- */
+.sf-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--paper);
+  border: 1.5px solid var(--hairline);
+  border-radius: 12px;
+  padding: 10px 13px;
+}
+.sf-search-bar svg {
+  width: 16px;
+  height: 16px;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+.sf-search-bar input {
+  border: none;
+  outline: none;
+  background: none;
+  flex: 1;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.sf-search-bar input::placeholder {
+  color: var(--ink-faint);
+}
+
+.sf-queue-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  background: var(--surface);
+}
+.sf-queue-row.locked {
+  border-color: var(--upi);
+  background: #fafbff;
+}
+.sf-qinfo {
+  flex: 1;
+  min-width: 0;
+}
+.sf-qbill {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+.sf-qcust {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.sf-qsub {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+.sf-qamt {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 18px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ---------- Approval modal ---------- */
+.sf-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 22, 51, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.sf-modal-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--gold-soft);
+  color: #6b4e15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+}
+.sf-modal-icon.cash {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.sf-modal-icon.upi {
+  background: var(--upi-soft);
+  color: var(--upi);
+}
+.sf-modal-icon svg {
+  width: 24px;
+  height: 24px;
+}
+.sf-modal-bill-card {
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-align: left;
+}
+.sf-modal-bill-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 6px 0;
+  color: var(--ink-soft);
+}
+.sf-modal-bill-row span:last-child {
+  color: var(--ink);
+  font-weight: 600;
+}
+.sf-modal-bill-row.total {
+  border-top: 1px solid var(--hairline);
+  margin-top: 4px;
+  padding-top: 10px;
+  font-size: 15px;
+}
+.sf-modal-bill-row.total span:last-child {
+  color: var(--ember-dark);
+  font-size: 18px;
+  font-weight: 700;
+}
+.sf-mode-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 0;
+  border-radius: 10px;
+  border: 1.5px solid var(--hairline);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-faint);
+}
+.sf-mode-pill svg {
+  width: 16px;
+  height: 16px;
+}
+.sf-mode-pill.selected.cash {
+  background: var(--success-soft);
+  border-color: var(--success);
+  color: var(--success);
+}
+.sf-mode-pill.selected.upi {
+  background: var(--upi-soft);
+  border-color: var(--upi);
+  color: var(--upi);
+}
+.sf-printer-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border-radius: 10px;
+  padding: 10px;
+}
+.sf-printer-note svg {
+  width: 15px;
+  height: 15px;
+}
+.sf-conflict-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  text-align: left;
+  margin-bottom: 14px;
+}
+.sf-conflict-banner svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ---------- Login ---------- */
+.sf-login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  padding: 20px;
+}
+.sf-login-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  padding: 32px 28px;
+  text-align: center;
+}
+.sf-login-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  overflow: hidden;
+  padding: 3px;
+}
+.sf-login-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+/* ---------- Forms ---------- */
+.sf-field label {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+.sf-field .form-control {
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--ink);
+  background: var(--paper);
+  padding: 9px 11px;
+}
+.sf-field .form-control:focus {
+  border-color: var(--ember);
+  box-shadow: 0 0 0 0.2rem rgba(216, 96, 44, 0.15);
+  background: var(--surface);
+}
+.sf-btn.sf-btn-reject {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
