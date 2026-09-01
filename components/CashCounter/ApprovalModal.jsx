@@ -503,22 +503,28 @@ export default function ApprovalModal({
 
     const original = Number(bill.grandTotal) || 0;
     const originalTaxable = Number(bill.taxableTotal) || 0;
-    const originalCgst = Number(bill.cgstTotal) || 0;
-    const originalSgst = Number(bill.sgstTotal) || 0;
 
-    // GST rates are derived from the bill's own tax/taxable ratio rather
-    // than a hardcoded 9%/9%, so this keeps working if a bill ever carries
-    // a different GST slab.
-    const cgstRate = originalTaxable > 0 ? originalCgst / originalTaxable : 0;
-    const sgstRate = originalTaxable > 0 ? originalSgst / originalTaxable : 0;
+    // GST is always treated as a flat 9% CGST + 9% SGST (18% total) here,
+    // regardless of whatever cgst_percent/gst_percent the backend sends
+    // for the bill or its items — so a bill recorded at 12% or any other
+    // slab still gets re-split as 9%/9% for the discounted recalculation.
+    const cgstRate = 0.09;
+    const sgstRate = 0.09;
+    const gstRate = cgstRate + sgstRate;
 
+    // Discount comes off the final, tax-inclusive invoice amount (e.g. a
+    // ₹120 bill with ₹20 discount becomes a ₹100 final amount) — not off
+    // the taxable amount. Taxable/CGST/SGST are then backed out of that
+    // discounted final amount using the bill's own GST rate, so tax is
+    // only charged on what the customer actually ends up paying.
     const discount = Math.max(0, Number(discountAmount) || 0);
-    const taxableAfterDiscount = Math.max(0, originalTaxable - discount);
-    const cgst = taxableAfterDiscount * cgstRate;
-    const sgst = taxableAfterDiscount * sgstRate;
-    const afterDiscount = taxableAfterDiscount + cgst + sgst;
+    const afterDiscount = Math.max(0, original - discount);
     const rounded = roundToNearestRupee(afterDiscount);
     const roundOff = Number((rounded - afterDiscount).toFixed(2));
+
+    const taxableAfterDiscount = gstRate > 0 ? rounded / (1 + gstRate) : rounded;
+    const cgst = taxableAfterDiscount * cgstRate;
+    const sgst = taxableAfterDiscount * sgstRate;
 
     return {
       original,
@@ -552,20 +558,14 @@ export default function ApprovalModal({
     // cash_upi → keep whatever user typed
   }, [paymentMode, calculations?.rounded, initialMode]);
 
+  // Every approval (any payment mode) must go through Update Bill first —
+  // that's what locks the name/GSTIN/discount/payment-mode fields and
+  // turns the card below into a review of exactly what will print, before
+  // Confirm & Print Bill becomes available. Only Reject skips this.
   const isDirty = useMemo(() => {
     if (!bill) return false;
-    const nameChanged =
-      (customerName.trim() || "") !== (bill.customerName || "");
-    const gstChanged =
-      (gstin.trim() || "") !== (bill.gstNumber || bill.gstin || "");
-    const discountChanged = Number(discountAmount || 0) > 0;
-    // Credit and Cash+UPI carry extra state (the credit flag, the split
-    // amounts) that only reaches the backend via the Update Bill call —
-    // there's no separate field edit to detect, so these modes are always
-    // treated as dirty until that update has run.
-    const modeNeedsUpdate = paymentMode === "credit" || paymentMode === "cash_upi";
-    return nameChanged || gstChanged || discountChanged || modeNeedsUpdate;
-  }, [bill, customerName, gstin, discountAmount, paymentMode]);
+    return initialMode !== "reject";
+  }, [bill, initialMode]);
 
   if (!bill) return null;
 
@@ -704,13 +704,32 @@ export default function ApprovalModal({
         <div className="font-display fw-semibold" style={{ fontSize: 18 }}>
           {isReject ? "Reject this bill?" : "Confirm payment & print bill"}
         </div>
-        <div style={{ fontSize: 12.5, color: "var(--ink-soft)", marginBottom: 18 }}>
+        <div style={{ fontSize: 12.5, color: "var(--ink-soft)", marginBottom: 8 }}>
           {isReject
             ? "The sales staff will need to re-check and resubmit it."
-            : isDirty && !hasUpdated
-              ? "You have made changes. Please update the bill first."
-              : "Edit details if needed, then confirm before the bill prints"}
+            : hasUpdated
+              ? "Reviewing final bill — this is exactly what will print."
+              : "Edit details and choose a payment mode, then click Update Bill to lock them in."}
         </div>
+
+        {!isReject && hasUpdated && (
+          <button
+            type="button"
+            onClick={() => setHasUpdated(false)}
+            style={{
+              border: "none",
+              background: "none",
+              color: "var(--brand, #b45309)",
+              fontSize: 12.5,
+              fontWeight: 600,
+              textDecoration: "underline",
+              cursor: "pointer",
+              marginBottom: 10,
+            }}
+          >
+            Edit details
+          </button>
+        )}
 
         {conflictMessage && (
           <div className="sf-conflict-banner">
@@ -776,7 +795,7 @@ export default function ApprovalModal({
                 setHasUpdated(false);
               }}
               placeholder="Customer name"
-              disabled={isReject}
+              disabled={isReject || hasUpdated}
             />
           </div>
 
@@ -788,7 +807,7 @@ export default function ApprovalModal({
           )}
 
           <div className="sf-modal-bill-row" style={{ alignItems: "center" }}>
-            <span>Customer GSTIN</span>
+            <span>Customer GSTIN/PAN</span>
             <input
               type="text"
               className="form-control form-control-sm mono"
@@ -800,7 +819,7 @@ export default function ApprovalModal({
               }}
               placeholder="GSTIN (optional)"
               maxLength={15}
-              disabled={isReject}
+              disabled={isReject || hasUpdated}
             />
           </div>
 
@@ -821,8 +840,8 @@ export default function ApprovalModal({
           )}
 
           <div className="sf-modal-bill-row">
-            <span>Taxable Amount</span>
-            <span className="mono">{formatINR(calculations.originalTaxable)}</span>
+            <span>Total Invoice Amount</span>
+            <span className="mono">{formatINR(calculations.original)}</span>
           </div>
 
           {!isReject && (
@@ -839,17 +858,26 @@ export default function ApprovalModal({
                   setDiscountAmount(e.target.value);
                   setHasUpdated(false);
                 }}
+                onWheel={(e) => e.target.blur()}
                 placeholder="0"
+                disabled={hasUpdated}
               />
             </div>
           )}
 
           {calculations.discount > 0 && (
             <div className="sf-modal-bill-row">
-              <span>Taxable after Discount</span>
-              <span className="mono">{formatINR(calculations.taxableAfterDiscount)}</span>
+              <span>Discount</span>
+              <span className="mono" style={{ color: "var(--danger)" }}>
+                −{formatINR(calculations.discount)}
+              </span>
             </div>
           )}
+
+          <div className="sf-modal-bill-row">
+            <span>Taxable Amount</span>
+            <span className="mono">{formatINR(calculations.taxableAfterDiscount)}</span>
+          </div>
 
           <div className="sf-modal-bill-row">
             <span>CGST</span>
@@ -988,7 +1016,7 @@ export default function ApprovalModal({
                 type="number"
                 min="0"
                 step="0.01"
-                className="form-control form-control-sm mono"
+                className="form-control form-control-sm mono no-spinner"
                 style={{ width: 130, textAlign: "right", fontSize: 13 }}
                 value={cashAmount}
                 onChange={(e) => {
@@ -998,6 +1026,7 @@ export default function ApprovalModal({
                   setUpiAmount(String(Math.max(0, Math.round(remaining * 100) / 100)));
                   setHasUpdated(false);
                 }}
+                onWheel={(e) => e.target.blur()}
                 placeholder="0"
                 disabled={hasUpdated}
               />
@@ -1009,7 +1038,7 @@ export default function ApprovalModal({
                 type="number"
                 min="0"
                 step="0.01"
-                className="form-control form-control-sm mono"
+                className="form-control form-control-sm mono no-spinner"
                 style={{ width: 130, textAlign: "right", fontSize: 13 }}
                 value={upiAmount}
                 onChange={(e) => {
@@ -1019,6 +1048,7 @@ export default function ApprovalModal({
                   setCashAmount(String(Math.max(0, Math.round(remaining * 100) / 100)));
                   setHasUpdated(false);
                 }}
+                onWheel={(e) => e.target.blur()}
                 placeholder="0"
                 disabled={hasUpdated}
               />

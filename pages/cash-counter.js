@@ -1427,8 +1427,15 @@ const SHOP_TABS = [
   { key: "SFR", label: "Shop 14-15" },
 ];
 
+// Bill numbers aren't always written as a clean "SFR001" prefix — some
+// come through as "SF/R/001" or "SF-R-001" — so strip anything that isn't
+// a letter/digit before checking the prefix, letting "SFR" match all of
+// those variants alike.
 function matchesShop(bill, shopKey) {
-  return String(bill.billNo || "").toUpperCase().startsWith(shopKey);
+  const normalized = String(bill.billNo || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+  return normalized.startsWith(shopKey);
 }
 
 function matchesSearch(bill, query) {
@@ -1533,7 +1540,7 @@ function PendingBlock({ label, bills, search, onSearchChange, onApprove }) {
                   <rect x="2" y="6" width="20" height="12" rx="2" />
                   <circle cx="12" cy="12" r="2.5" />
                 </svg>
-                Payment
+                Approve
               </button>
               <button
                 className="sf-btn sf-btn-reject sf-btn-sm"
@@ -1603,6 +1610,11 @@ export default function CashCounterPage() {
       );
     return { blockA: a, blockB: b };
   }, [pending, activeShop]);
+
+  const visibleApproved = useMemo(
+    () => approvedThisSession.filter((b) => matchesShop(b, activeShop)),
+    [approvedThisSession, activeShop],
+  );
 
   if (!ready || !user) return null;
 
@@ -1865,12 +1877,12 @@ async function handleUpdate(bill, payload) {
             — resets on page refresh, see README
           </span>
         </div>
-        {approvedThisSession.length === 0 && (
+        {visibleApproved.length === 0 && (
           <div style={{ fontSize: 13, color: "var(--ink-soft)" }}>
             Nothing approved yet this session.
           </div>
         )}
-        {approvedThisSession.length > 0 && (
+        {visibleApproved.length > 0 && (
           <div className="sf-table-wrap">
             <table className="sf-table">
               <thead>
@@ -1884,7 +1896,7 @@ async function handleUpdate(bill, payload) {
                 </tr>
               </thead>
               <tbody>
-                {approvedThisSession.map((b) => (
+                {visibleApproved.map((b) => (
                   <tr key={b.id}>
                     <td className="mono">{b.billNo}</td>
                     <td>{b.customerName}</td>

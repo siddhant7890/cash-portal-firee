@@ -294,10 +294,13 @@ const COMPANY = {
   gstin: "27AAMFS0917L1ZT",
 };
 
+// Print-only formatting — all the underlying math stays in decimals (see
+// ApprovalModal), this just rounds to the nearest rupee for what actually
+// gets printed on the receipt, so there's no ".00"/paisa clutter on paper.
 function money(amount) {
-  return Number(amount || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+  return Math.round(Number(amount) || 0).toLocaleString("en-IN", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   });
 }
 
@@ -666,14 +669,15 @@ function ReceiptContent({ bill }) {
       </div>
 
       <div className="sf-r-row">
-        <span>
-          Name: {isWalkIn ? "Walk-in" : bill.customerName}
+      
+            <span>
+          Bill No: {bill.billNo || "-"}
         </span>
       </div>
 
       <div className="sf-r-row">
         <span>
-          Bill No: {bill.billNo || "-"}
+          Name: {isWalkIn ? "-" : bill.customerName}
         </span>
 
         {numberOfCartoon != null ? (
@@ -710,42 +714,42 @@ function ReceiptContent({ bill }) {
       ====================================== */}
 
       <div className="sf-r-items">
-        <table>
-          <thead>
-            <tr>
-              <th style={{ width: "6%" }}>
+        <table className="text-center">
+          <thead className="text-center">
+            <tr className="text-center">
+              <th className="text-center" style={{ width: "10%" }}>
                 Sr
               </th>
 
-              <th style={{ width: "9%" }}>
+              <th className="text-center" style={{ width: "10%" }}>
                 Qty
               </th>
 
-              <th style={{ width: "13%" }}>
+              <th className="text-center" style={{ width: "20%", whiteSpace: "nowrap" }}>
                 HSN
               </th>
 
-              <th style={{ width: "30%" }}>
+              <th className="text-center" style={{ width: "15%" }}>
                 Item
               </th>
 
               <th
-                className="num"
-                style={{ width: "21%" }}
+                className="text-end num "
+                style={{ width: "15%" }}
               >
                 Rate
               </th>
 
               <th
-                className="num"
-                style={{ width: "21%" }}
+                className="text-end num "
+                style={{ width: "15%" }}
               >
                 Amt
               </th>
             </tr>
           </thead>
 
-          <tbody>
+          <tbody className="text-center">
             {items.map((it) => (
               <tr key={it.sr}>
                 <td>
@@ -756,7 +760,7 @@ function ReceiptContent({ bill }) {
                   {it.qty}
                 </td>
 
-                <td>
+                <td style={{ whiteSpace: "nowrap" }}>
                   {it.hsn}
                 </td>
 
@@ -789,17 +793,19 @@ function ReceiptContent({ bill }) {
 
         <div className="sf-r-row">
           <span>
-            Taxable Amount
+            Total Invoice Amount
           </span>
 
           <span>
-            {money(taxableAmount + discount)}
+            {money(totalAmount + discount)}
           </span>
         </div>
 
         {/* DISCOUNT */}
 
         {discount > 0 && (
+          <div>
+
           <div className="sf-r-row">
             <span>
               Discount
@@ -809,31 +815,53 @@ function ReceiptContent({ bill }) {
               -{money(discount)}
             </span>
           </div>
+             <div className="sf-r-row">
+          <span>
+            Final Amount
+          </span>
+
+          <span>
+         {money(totalAmount)}
+          </span>
+        </div>
+
+           </div>
         )}
-
-        {/* CGST */}
-
-        <div className="sf-r-row">
-          <span>
-            CGST 9%
+ 
+        {/* HORIZONTAL BREAKDOWN — Taxable / CGST / SGST / Final Amount,
+            each as a label stacked over its value, spread across the
+            width of the receipt. */}
+ <div className="sf-r-hr" />
+        <div
+          className="sf-r-row"
+          style={{
+            marginTop: 4,
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            fontSize: 10.5,
+          }}
+        >
+          <span style={{ display: "flex", flexDirection: "column" }}>
+            <span>Taxable</span>
+            <span className="sf-r-bold">{money(taxableAmount)}</span>
           </span>
 
-          <span>
-            {money(cgst)}
+          <span style={{ display: "flex", flexDirection: "column", textAlign: "center" }}>
+            <span>CGST</span>
+            <span className="sf-r-bold">{money(cgst)}</span>
+          </span>
+
+          <span style={{ display: "flex", flexDirection: "column", textAlign: "center" }}>
+            <span>SGST</span>
+            <span className="sf-r-bold">{money(sgst)}</span>
+          </span>
+
+          <span style={{ display: "flex", flexDirection: "column", textAlign: "right" }}>
+            <span>Total Amount</span>
+            <span className="sf-r-bold">{money(totalAmount)}</span>
           </span>
         </div>
 
-        {/* SGST */}
-
-        <div className="sf-r-row">
-          <span>
-            SGST 9%
-          </span>
-
-          <span>
-            {money(sgst)}
-          </span>
-        </div>
 {/* ROUND OFF */}
   {Number(bill.round_off_amount) !== 0 && (
     <div className="sf-r-row">
