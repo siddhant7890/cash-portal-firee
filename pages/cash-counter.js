@@ -1531,7 +1531,7 @@ function PendingBlock({ label, bills, search, onSearchChange, onApprove }) {
               </div>
             </div>
             <div className="sf-qamt">{formatINR(b.grandTotal)}</div>
-            <div className="d-flex gap-2">
+            <div className="d-flex gap-2 sf-qactions">
               <button
                 className="sf-btn sf-btn-cash sf-btn-sm"
                 onClick={() => onApprove(b, "cash")}
