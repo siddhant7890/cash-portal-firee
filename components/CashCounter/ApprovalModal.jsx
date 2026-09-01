@@ -480,10 +480,14 @@ export default function ApprovalModal({
 }) {
   const [customerName, setCustomerName] = useState("");
   const [gstin, setGstin] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("");
   const [discountAmount, setDiscountAmount] = useState("");
-  const [paymentMode, setPaymentMode] = useState(initialMode); // cash | upi | credit | cash_upi
+  const [paymentMode, setPaymentMode] = useState(initialMode); // cash | upi | cash_upi
   const [cashAmount, setCashAmount] = useState("");
   const [upiAmount, setUpiAmount] = useState("");
+  // Three-stage flow: editable → Review (client-side lock, no API call) →
+  // Update Bill (hits the API) → Confirm & Print Bill.
+  const [reviewed, setReviewed] = useState(false);
   const [hasUpdated, setHasUpdated] = useState(false);
   const [updating, setUpdating] = useState(false);
 
@@ -491,10 +495,12 @@ export default function ApprovalModal({
     if (!bill) return;
     setCustomerName(bill.customerName || "");
     setGstin(bill.gstNumber || bill.gstin || "");
+    setMobileNumber(bill.customerMobile || "");
     setDiscountAmount("");
     setPaymentMode(initialMode === "reject" ? null : initialMode || "cash");
     setCashAmount("");
     setUpiAmount("");
+    setReviewed(false);
     setHasUpdated(false);
   }, [bill, initialMode]);
 
@@ -551,26 +557,14 @@ export default function ApprovalModal({
     } else if (paymentMode === "upi") {
       setCashAmount("0");
       setUpiAmount(String(final));
-    } else if (paymentMode === "credit") {
-      setCashAmount("0");
-      setUpiAmount("0");
     }
     // cash_upi → keep whatever user typed
   }, [paymentMode, calculations?.rounded, initialMode]);
 
-  // Every approval (any payment mode) must go through Update Bill first —
-  // that's what locks the name/GSTIN/discount/payment-mode fields and
-  // turns the card below into a review of exactly what will print, before
-  // Confirm & Print Bill becomes available. Only Reject skips this.
-  const isDirty = useMemo(() => {
-    if (!bill) return false;
-    return initialMode !== "reject";
-  }, [bill, initialMode]);
-
   if (!bill) return null;
 
   const isReject = initialMode === "reject";
-  const { tokenNumber, customerMobile } = bill;
+  const { tokenNumber } = bill;
 
   const cashNum = Number(cashAmount) || 0;
   const upiNum = Number(upiAmount) || 0;
@@ -593,14 +587,12 @@ export default function ApprovalModal({
     } else if (paymentMode === "cash_upi") {
       total_cash = cashNum;
       total_upi = upiNum;
-    } else if (paymentMode === "credit") {
-      total_cash = 0;
-      total_upi = 0;
     }
 
     return {
       customerName: customerName.trim() || bill.customerName,
       gstNumber: gstin.trim() || null,
+      customerMobile: mobileNumber.trim() || null,
       discount_amount: calculations.discount,
       taxable_amount: calculations.taxableAfterDiscount,
       cgst_amount: calculations.cgst,
@@ -614,6 +606,14 @@ export default function ApprovalModal({
     };
   };
 
+  // Stage 1 → 2: purely a client-side lock, no API call — just freezes the
+  // fields so the card below reads as a preview of what Update will save.
+  function handleReviewClick() {
+    if (splitMismatch) return;
+    setReviewed(true);
+  }
+
+  // Stage 2 → 3: this is what actually hits the update API.
   async function handleUpdateClick() {
     if (!onUpdate) return;
     if (splitMismatch) return;
@@ -638,8 +638,17 @@ export default function ApprovalModal({
     onConfirm(bill, paymentMode, buildPayload());
   }
 
-  const showUpdateButton = !isReject && isDirty && !hasUpdated;
-  const showApproveButton = isReject || !isDirty || hasUpdated;
+  function handleEditClick() {
+    setReviewed(false);
+    setHasUpdated(false);
+  }
+
+  // Reject skips the whole Review → Update staging and goes straight to
+  // its own confirm button.
+  const showReviewButton = !isReject && !reviewed;
+  const showUpdateButton = !isReject && reviewed && !hasUpdated;
+  const showApproveButton = isReject || (reviewed && hasUpdated);
+  const isLocked = isReject || reviewed;
 
   return (
     <div
@@ -683,11 +692,6 @@ export default function ApprovalModal({
               <rect x="4" y="2" width="16" height="20" rx="2" />
               <path d="M8 6h8M8 18h.01" />
             </svg>
-          ) : paymentMode === "credit" ? (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="2" y="5" width="20" height="14" rx="2" />
-              <path d="M2 10h20" />
-            </svg>
           ) : paymentMode === "cash_upi" ? (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="2" y="6" width="20" height="12" rx="2" />
@@ -707,29 +711,12 @@ export default function ApprovalModal({
         <div style={{ fontSize: 12.5, color: "var(--ink-soft)", marginBottom: 8 }}>
           {isReject
             ? "The sales staff will need to re-check and resubmit it."
-            : hasUpdated
-              ? "Reviewing final bill — this is exactly what will print."
-              : "Edit details and choose a payment mode, then click Update Bill to lock them in."}
+            : !reviewed
+              ? "Edit details and choose a payment mode, then click Review to lock them in."
+              : !hasUpdated
+                ? "Reviewing bill — click Update Bill to save these changes."
+                : "Reviewing final bill — this is exactly what will print."}
         </div>
-
-        {!isReject && hasUpdated && (
-          <button
-            type="button"
-            onClick={() => setHasUpdated(false)}
-            style={{
-              border: "none",
-              background: "none",
-              color: "var(--brand, #b45309)",
-              fontSize: 12.5,
-              fontWeight: 600,
-              textDecoration: "underline",
-              cursor: "pointer",
-              marginBottom: 10,
-            }}
-          >
-            Edit details
-          </button>
-        )}
 
         {conflictMessage && (
           <div className="sf-conflict-banner">
@@ -795,16 +782,26 @@ export default function ApprovalModal({
                 setHasUpdated(false);
               }}
               placeholder="Customer name"
-              disabled={isReject || hasUpdated}
+              disabled={isLocked}
             />
           </div>
 
-          {customerMobile && (
-            <div className="sf-modal-bill-row">
-              <span>Mobile</span>
-              <span className="mono">{customerMobile}</span>
-            </div>
-          )}
+          <div className="sf-modal-bill-row" style={{ alignItems: "center" }}>
+            <span>Mobile</span>
+            <input
+              type="tel"
+              className="form-control form-control-sm mono"
+              style={{ width: 180, textAlign: "right", fontSize: 13 }}
+              value={mobileNumber}
+              onChange={(e) => {
+                setMobileNumber(e.target.value.replace(/[^0-9]/g, ""));
+                setHasUpdated(false);
+              }}
+              placeholder="Mobile number"
+              maxLength={10}
+              disabled={isLocked}
+            />
+          </div>
 
           <div className="sf-modal-bill-row" style={{ alignItems: "center" }}>
             <span>Customer GSTIN/PAN</span>
@@ -819,7 +816,7 @@ export default function ApprovalModal({
               }}
               placeholder="GSTIN (optional)"
               maxLength={15}
-              disabled={isReject || hasUpdated}
+              disabled={isLocked}
             />
           </div>
 
@@ -860,7 +857,7 @@ export default function ApprovalModal({
                 }}
                 onWheel={(e) => e.target.blur()}
                 placeholder="0"
-                disabled={hasUpdated}
+                disabled={isLocked}
               />
             </div>
           )}
@@ -905,13 +902,12 @@ export default function ApprovalModal({
           </div>
         </div>
 
-        {/* Payment mode pills — hidden after successful update */}
-        {!isReject && !hasUpdated && (
+        {/* Payment mode pills — hidden once reviewed/locked */}
+        {!isReject && !reviewed && (
           <div className="d-flex gap-2 mb-3 flex-wrap justify-content-center">
             {[
               { key: "cash", label: "Cash" },
               { key: "upi", label: "UPI" },
-              { key: "credit", label: "Credit" },
               { key: "cash_upi", label: "Cash + UPI" },
             ].map(({ key, label }) => {
               const isSelected = paymentMode === key;
@@ -933,25 +929,19 @@ export default function ApprovalModal({
                               ? "var(--cash-soft, #e8f5e9)"
                               : key === "upi"
                                 ? "var(--upi-soft, #e3f2fd)"
-                                : key === "credit"
-                                  ? "var(--brand-soft, #fff3e0)"
-                                  : "#f3e8ff",
+                                : "#f3e8ff",
                           color:
                             key === "cash"
                               ? "var(--cash, #2e7d32)"
                               : key === "upi"
                                 ? "var(--upi, #1565c0)"
-                                : key === "credit"
-                                  ? "var(--brand, #b45309)"
-                                  : "#6b21a8",
+                                : "#6b21a8",
                           border: `1.5px solid ${
                             key === "cash"
                               ? "var(--cash, #2e7d32)"
                               : key === "upi"
                                 ? "var(--upi, #1565c0)"
-                                : key === "credit"
-                                  ? "var(--brand, #b45309)"
-                                  : "#6b21a8"
+                                : "#6b21a8"
                           }`,
                           fontWeight: 700,
                         }
@@ -969,8 +959,8 @@ export default function ApprovalModal({
           </div>
         )}
 
-        {/* Locked payment mode message after update */}
-        {!isReject && hasUpdated && paymentMode && (
+        {/* Locked payment mode message once reviewed */}
+        {!isReject && reviewed && paymentMode && (
           <div
             style={{
               marginBottom: 14,
@@ -988,9 +978,7 @@ export default function ApprovalModal({
               ? "Cash"
               : paymentMode === "upi"
                 ? "UPI"
-                : paymentMode === "credit"
-                  ? "Credit"
-                  : "Cash + UPI"}
+                : "Cash + UPI"}
           </div>
         )}
 
@@ -1028,7 +1016,7 @@ export default function ApprovalModal({
                 }}
                 onWheel={(e) => e.target.blur()}
                 placeholder="0"
-                disabled={hasUpdated}
+                disabled={isLocked}
               />
             </div>
 
@@ -1050,7 +1038,7 @@ export default function ApprovalModal({
                 }}
                 onWheel={(e) => e.target.blur()}
                 placeholder="0"
-                disabled={hasUpdated}
+                disabled={isLocked}
               />
             </div>
 
@@ -1093,12 +1081,6 @@ export default function ApprovalModal({
             Total Cash: ₹0 · Total UPI: <strong>{formatINR(finalAmount)}</strong>
           </div>
         )}
-        {!isReject && paymentMode === "credit" && (
-          <div style={{ fontSize: 12.5, color: "var(--ink-soft)", marginBottom: 12 }}>
-            Credit · Total Cash: ₹0 · Total UPI: ₹0
-          </div>
-        )}
-
         {!isReject && (
           <div className="sf-printer-note mb-3">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1113,11 +1095,21 @@ export default function ApprovalModal({
         <div className="d-flex gap-2">
           <button
             className="sf-btn flex-grow-1 justify-content-center"
-            onClick={onClose}
+            onClick={!isReject && reviewed ? handleEditClick : onClose}
             disabled={confirming || updating}
           >
-            Cancel
+            {!isReject && reviewed ? "Back" : "Cancel"}
           </button>
+
+          {showReviewButton && (
+            <button
+              className="sf-btn sf-btn-primary flex-grow-1 justify-content-center"
+              onClick={handleReviewClick}
+              disabled={Boolean(conflictMessage) || (!isReject && !paymentMode) || splitMismatch}
+            >
+              Review
+            </button>
+          )}
 
           {showUpdateButton && (
             <button

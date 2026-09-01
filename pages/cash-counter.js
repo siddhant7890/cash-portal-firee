@@ -1711,6 +1711,7 @@ async function handleConfirm(bill, mode, payload = {}) {
         ...bill,
         customerName: payload.customerName ?? bill.customerName,
         gstNumber: payload.gstNumber ?? bill.gstNumber,
+        customerMobile: payload.customerMobile ?? bill.customerMobile,
         grandTotal: payload.grandTotal ?? bill.grandTotal,
         discount_amount: payload.discount_amount ?? 0,
         discountTotal: payload.discount_amount ?? 0,
@@ -1720,13 +1721,7 @@ async function handleConfirm(bill, mode, payload = {}) {
         sgstTotal: payload.sgst_amount ?? bill.sgstTotal,
         round_off_amount: payload.round_off_amount ?? 0,
         paymentMode:
-          mode === "cash"
-            ? "Cash"
-            : mode === "upi"
-              ? "UPI"
-              : mode === "cash_upi"
-                ? "Cash + UPI"
-                : "Credit",
+          mode === "cash" ? "Cash" : mode === "upi" ? "UPI" : "Cash + UPI",
         approvedBy: user.name,
         approvedAt: new Date().toISOString(),
         total_cash: payload.total_cash,   // ← add
@@ -1752,6 +1747,7 @@ async function handleUpdate(bill, payload) {
     await updateBill(bill.id, {
       customerName: payload.customerName,
       gstNumber: payload.gstNumber,
+      customerMobile: payload.customerMobile,
       discount_amount: payload.discount_amount,
       taxable_amount: payload.taxable_amount,
       cgst_amount: payload.cgst_amount,

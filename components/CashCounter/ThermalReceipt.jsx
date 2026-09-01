@@ -298,7 +298,8 @@ const COMPANY = {
 // ApprovalModal), this just rounds to the nearest rupee for what actually
 // gets printed on the receipt, so there's no ".00"/paisa clutter on paper.
 function money(amount) {
-  return Math.round(Number(amount) || 0).toLocaleString("en-IN", {
+  const rounded = Math.round(Number(amount) || 0);
+  return "₹" + rounded.toLocaleString("en-IN", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   });
@@ -544,18 +545,18 @@ function ReceiptContent({ bill }) {
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            font-size: 10.5px;
+            font-size: 8.5px;
           }
 
           .sf-r-items th {
             text-align: left;
             border-bottom: 1px dashed #000;
-            padding-bottom: 3px;
+            padding-bottom: 2px;
             font-weight: 700;
           }
 
           .sf-r-items td {
-            padding: 3px 0;
+            padding: 2px 0;
             vertical-align: top;
             word-wrap: break-word;
           }
@@ -702,14 +703,14 @@ function ReceiptContent({ bill }) {
       {customerGstin ? (
         <div className="sf-r-row">
           <span>
-            GSTIN: {customerGstin}
+            GSTIN / PAN : {customerGstin}
           </span>
         </div>
       ) : null}
 
       <div className="sf-r-hr" />
 
-      {/* =====================================
+      {/* ===================================
           ITEMS
       ====================================== */}
 
@@ -717,11 +718,11 @@ function ReceiptContent({ bill }) {
         <table className="text-center">
           <thead className="text-center">
             <tr className="text-center">
-              <th className="text-center" style={{ width: "10%" }}>
+              <th className="text-center" style={{ width: "5%" }}>
                 Sr
               </th>
 
-              <th className="text-center" style={{ width: "10%" }}>
+              <th className="text-center" style={{ width: "5%" }}>
                 Qty
               </th>
 
@@ -729,20 +730,20 @@ function ReceiptContent({ bill }) {
                 HSN
               </th>
 
-              <th className="text-center" style={{ width: "15%" }}>
+              <th className="text-center" style={{ width: "30%" }}>
                 Item
               </th>
 
               <th
                 className="text-end num "
-                style={{ width: "15%" }}
+                style={{ width: "10%" }}
               >
                 Rate
               </th>
 
               <th
                 className="text-end num "
-                style={{ width: "15%" }}
+                style={{ width: "10%" }}
               >
                 Amt
               </th>
@@ -804,8 +805,6 @@ function ReceiptContent({ bill }) {
         {/* DISCOUNT */}
 
         {discount > 0 && (
-          <div>
-
           <div className="sf-r-row">
             <span>
               Discount
@@ -815,23 +814,12 @@ function ReceiptContent({ bill }) {
               -{money(discount)}
             </span>
           </div>
-             <div className="sf-r-row">
-          <span>
-            Final Amount
-          </span>
-
-          <span>
-         {money(totalAmount)}
-          </span>
-        </div>
-
-           </div>
         )}
- 
-        {/* HORIZONTAL BREAKDOWN — Taxable / CGST / SGST / Final Amount,
+
+        {/* HORIZONTAL BREAKDOWN — Taxable / CGST / SGST / Total Amount,
             each as a label stacked over its value, spread across the
             width of the receipt. */}
- <div className="sf-r-hr" />
+        <div className="sf-r-hr" />
         <div
           className="sf-r-row"
           style={{
@@ -847,12 +835,12 @@ function ReceiptContent({ bill }) {
           </span>
 
           <span style={{ display: "flex", flexDirection: "column", textAlign: "center" }}>
-            <span>CGST</span>
+            <span>CGST 9%</span>
             <span className="sf-r-bold">{money(cgst)}</span>
           </span>
 
           <span style={{ display: "flex", flexDirection: "column", textAlign: "center" }}>
-            <span>SGST</span>
+            <span>SGST 9%</span>
             <span className="sf-r-bold">{money(sgst)}</span>
           </span>
 
@@ -862,16 +850,6 @@ function ReceiptContent({ bill }) {
           </span>
         </div>
 
-{/* ROUND OFF */}
-  {Number(bill.round_off_amount) !== 0 && (
-    <div className="sf-r-row">
-      <span>Round Off</span>
-      <span>
-        {Number(bill.round_off_amount) > 0 ? "+" : ""}
-        {money(bill.round_off_amount)}
-      </span>
-    </div>
-  )}
         <div className="sf-r-hr" />
 
         {/* GRAND TOTAL */}
@@ -882,7 +860,7 @@ function ReceiptContent({ bill }) {
           </span>
 
           <span>
-            Rs. {money(totalAmount)}
+            {money(totalAmount)}
           </span>
         </div>
 
