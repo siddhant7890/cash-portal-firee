@@ -722,18 +722,18 @@ function ReceiptContent({ bill }) {
                 Sr
               </th>
 
-              <th className="text-center" style={{ width: "5%" }}>
-                Qty
-              </th>
+            
 
               <th className="text-center" style={{ width: "20%", whiteSpace: "nowrap" }}>
                 HSN
               </th>
 
-              <th className="text-center" style={{ width: "30%" }}>
+              <th className="text-center" style={{ width: "25%" }}>
                 Item
               </th>
-
+  <th className="text-center" style={{ width: "5%" }}>
+                Qty
+              </th>
               <th
                 className="text-end num "
                 style={{ width: "10%" }}
@@ -743,7 +743,7 @@ function ReceiptContent({ bill }) {
 
               <th
                 className="text-end num "
-                style={{ width: "10%" }}
+                style={{ width: "15%" }}
               >
                 Amt
               </th>
@@ -757,9 +757,7 @@ function ReceiptContent({ bill }) {
                   {it.sr}
                 </td>
 
-                <td>
-                  {it.qty}
-                </td>
+          
 
                 <td style={{ whiteSpace: "nowrap" }}>
                   {it.hsn}
@@ -768,7 +766,9 @@ function ReceiptContent({ bill }) {
                 <td className="sf-r-particulars">
                   {it.particulars}
                 </td>
-
+      <td>
+                  {it.qty}
+                </td>
                 <td className="num">
                   {money(it.rateIncGst)}
                 </td>
@@ -831,22 +831,26 @@ function ReceiptContent({ bill }) {
         >
           <span style={{ display: "flex", flexDirection: "column" }}>
             <span>Taxable</span>
-            <span className="sf-r-bold">{money(taxableAmount)}</span>
+            <span>Amount</span>
+            <span className="sf-r-bold mt-1">{money(taxableAmount)}</span>
           </span>
 
           <span style={{ display: "flex", flexDirection: "column", textAlign: "center" }}>
-            <span>CGST 9%</span>
-            <span className="sf-r-bold">{money(cgst)}</span>
+            <span>CGST </span>
+                 <span>@9%</span>
+            <span className="sf-r-bold mt-1">{money(cgst)}</span>
           </span>
 
           <span style={{ display: "flex", flexDirection: "column", textAlign: "center" }}>
-            <span>SGST 9%</span>
-            <span className="sf-r-bold">{money(sgst)}</span>
+            <span>SGST</span>
+                 <span>@9%</span>
+            <span className="sf-r-bold mt-1">{money(sgst)}</span>
           </span>
 
           <span style={{ display: "flex", flexDirection: "column", textAlign: "right" }}>
-            <span>Total Amount</span>
-            <span className="sf-r-bold">{money(totalAmount)}</span>
+            <span>Total </span>
+                 <span>Amount</span>
+            <span className="sf-r-bold mt-1">{money(totalAmount)}</span>
           </span>
         </div>
 
