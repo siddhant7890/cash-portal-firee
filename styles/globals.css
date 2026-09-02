@@ -300,6 +300,7 @@ svg {
     height: 100vh;
     width: 260px;
     max-width: 82vw;
+    overflow-y: hidden;
     transform: translateX(-100%);
     transition: transform 0.25s ease;
     z-index: 1200;
@@ -335,12 +336,24 @@ svg {
   .sf-main {
     padding: 16px 16px 32px;
   }
+  /* Bootstrap's .row gutter + .col-lg-6 padding stack on top of .sf-main's
+     own padding on mobile (where the columns are full-width anyway),
+     pushing the panel in from the left more than intended — zero it out
+     so .sf-panel's own padding is the only inset left/right. */
+  .row.g-3 {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .row.g-3 > [class*="col-"] {
+    padding-left: 0;
+    padding-right: 0;
+  }
   .sf-panel {
     padding: 14px;
   }
   .sf-queue-row {
     flex-direction: column;
-    align-items: stretch;
+    align-items: stretch !important;
     gap: 8px;
   }
   .sf-qamt {
