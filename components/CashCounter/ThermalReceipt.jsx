@@ -340,31 +340,39 @@ function getBillItems(bill) {
   });
 }
 
+// Always mounted (bill or no bill) so the print stylesheet below is
+// registered in the document from the very first render — not just the
+// instant a bill is set. Previously this whole component (style tag
+// included) bailed out with `if (!bill) return null`, which meant the
+// @media print rules only existed in the DOM for the few milliseconds
+// between setting the bill and calling window.print(). On slower mobile
+// devices that timing window wasn't always enough for the browser to
+// register the newly-inserted stylesheet before print() fired, so the
+// print engine found no rules telling it to hide the rest of the page and
+// printed the visible cash-portal UI instead of just the receipt.
 function ReceiptContent({ bill }) {
-  if (!bill) return null;
+  const items = bill ? getBillItems(bill) : [];
 
-  const items = getBillItems(bill);
-
-  const totalAmount = Number(bill.grandTotal) || 0;
-  const taxableAmount = Number(bill.taxableTotal) || 0;
-  const cgst = Number(bill.cgstTotal) || 0;
-  const sgst = Number(bill.sgstTotal) || 0;
+  const totalAmount = Number(bill?.grandTotal) || 0;
+  const taxableAmount = Number(bill?.taxableTotal) || 0;
+  const cgst = Number(bill?.cgstTotal) || 0;
+  const sgst = Number(bill?.sgstTotal) || 0;
   const discount = Number(
-    bill.discountTotal ?? bill.discount ?? bill.discount_amount ?? 0
+    bill?.discountTotal ?? bill?.discount ?? bill?.discount_amount ?? 0
   );
 
-  const tokenNumber = bill.tokenNumber;
-  const customerMobile = bill.customerMobile;
-  const customerGstin = bill.gstNumber;
-  const numberOfCartoon = bill.numberOfCartoon ?? bill.number_of_cartoon;
+  const tokenNumber = bill?.tokenNumber;
+  const customerMobile = bill?.customerMobile;
+  const customerGstin = bill?.gstNumber;
+  const numberOfCartoon = bill?.numberOfCartoon ?? bill?.number_of_cartoon;
 
-  const totalCash = Number(bill.total_cash) || 0;
-  const totalUpi = Number(bill.total_upi) || 0;
+  const totalCash = Number(bill?.total_cash) || 0;
+  const totalUpi = Number(bill?.total_upi) || 0;
   const isSplitPayment = totalCash > 0 && totalUpi > 0;
 
   const isWalkIn =
-    !bill.customerName ||
-    /walk[\s-]?in/i.test(bill.customerName);
+    !bill?.customerName ||
+    /walk[\s-]?in/i.test(bill?.customerName || "");
 
   return (
     <div className="sf-receipt">
@@ -604,6 +612,8 @@ function ReceiptContent({ bill }) {
         }
       `}</style>
 
+      {bill && (
+      <>
       {/* =====================================
           TAX INVOICE
       ====================================== */}
@@ -921,8 +931,10 @@ function ReceiptContent({ bill }) {
         </div>
 
       </div>
+      </>
+      )}
 
-      {/* 
+      {/*
         The remaining ~50mm blank space is created
         automatically by the bottom padding of
         .sf-receipt.
@@ -953,28 +965,41 @@ export function useThermalPrint() {
   useEffect(() => {
     if (!bill) return;
 
-    // Small delay allows the receipt to render
-    // before Chrome starts the print process.
-    const t = setTimeout(() => {
+    // A fixed setTimeout is a guess at how long the browser needs to
+    // paint the receipt's actual content before printing — reliable
+    // enough on fast devices, but not on slower ones. Two nested
+    // requestAnimationFrame calls instead wait for an actual paint cycle
+    // to complete (the callback only fires after the browser has painted
+    // the frame scheduled by the previous one), so this adapts to the
+    // device instead of racing a fixed delay. A fallback timeout covers
+    // browsers where rAF doesn't fire promptly (e.g. a backgrounded/
+    // throttled webview) — `printed` stops both paths from ever firing
+    // window.print() twice.
+    let printed = false;
+    const doPrint = () => {
+      if (printed) return;
+      printed = true;
       window.print();
-    }, 60);
+    };
+
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(doPrint);
+    });
+    let raf2 = null;
+
+    const fallback = setTimeout(doPrint, 500);
 
     const clear = () => {
       setBill(null);
     };
 
-    window.addEventListener(
-      "afterprint",
-      clear
-    );
+    window.addEventListener("afterprint", clear);
 
     return () => {
-      clearTimeout(t);
-
-      window.removeEventListener(
-        "afterprint",
-        clear
-      );
+      cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+      clearTimeout(fallback);
+      window.removeEventListener("afterprint", clear);
     };
   }, [bill]);
 
