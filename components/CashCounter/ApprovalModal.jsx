@@ -589,20 +589,30 @@ export default function ApprovalModal({
       total_upi = upiNum;
     }
 
+    // The amount added/removed to round the discounted total to a whole
+    // rupee (final rounded total − exact total). Positive = rounded up,
+    // negative = rounded down.
+    // Signed number: +0.5 (rounded up), -0.3 (rounded down), or 0 when
+    // there is nothing to round.
+    const num = (v) => Number(v) || 0;
+    const RoundOff = num(calculations.roundOff);
+
+    // Every numeric field falls back to 0 instead of being missing/NaN.
     return {
       customerName: customerName.trim() || bill.customerName,
       gstNumber: gstin.trim() || null,
       customerMobile: mobileNumber.trim() || null,
-      discount_amount: calculations.discount,
-      taxable_amount: calculations.taxableAfterDiscount,
-      cgst_amount: calculations.cgst,
-      sgst_amount: calculations.sgst,
-      grandTotal: calculations.rounded,
-      round_off_amount: calculations.roundOff,
-      originalGrandTotal: calculations.original,
+      discount_amount: num(calculations.discount),
+      taxable_amount: num(calculations.taxableAfterDiscount),
+      cgst_amount: num(calculations.cgst),
+      sgst_amount: num(calculations.sgst),
+      grandTotal: num(calculations.rounded),
+      RoundOff,
+      round_off_amount: RoundOff,
+      originalGrandTotal: num(calculations.original),
       paymentMode,
-      total_cash,
-      total_upi,
+      total_cash: num(total_cash),
+      total_upi: num(total_upi),
     };
   };
 

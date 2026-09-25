@@ -1719,7 +1719,8 @@ async function handleConfirm(bill, mode, payload = {}) {
         taxableTotal: payload.taxable_amount ?? bill.taxableTotal,
         cgstTotal: payload.cgst_amount ?? bill.cgstTotal,
         sgstTotal: payload.sgst_amount ?? bill.sgstTotal,
-        round_off_amount: payload.round_off_amount ?? 0,
+        RoundOff: payload.RoundOff ?? 0,
+        round_off_amount: payload.RoundOff ?? payload.round_off_amount ?? 0,
         paymentMode:
           mode === "cash" ? "Cash" : mode === "upi" ? "UPI" : "Cash + UPI",
         approvedBy: user.name,
@@ -1753,7 +1754,8 @@ async function handleUpdate(bill, payload) {
       cgst_amount: payload.cgst_amount,
       sgst_amount: payload.sgst_amount,
       grandTotal: payload.grandTotal,
-      round_off_amount: payload.round_off_amount,
+      RoundOff: payload.RoundOff ?? 0,
+      round_off_amount: payload.RoundOff ?? payload.round_off_amount ?? 0,
       paymentMode: payload.paymentMode,
       total_cash: payload.total_cash,   // ← add
   total_upi: payload.total_upi,
@@ -1935,3 +1937,5 @@ async function handleUpdate(bill, payload) {
     </Layout>
   );
 }
+
+

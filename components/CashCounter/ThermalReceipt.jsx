@@ -553,7 +553,11 @@ function ReceiptContent({ bill }) {
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            font-size: 8.5px;
+            font-size: 10.5px;
+            font-weight: 700;
+            text-shadow:
+              0.3px 0 0 currentColor,
+              -0.3px 0 0 currentColor;
           }
 
           .sf-r-items th {
@@ -561,12 +565,21 @@ function ReceiptContent({ bill }) {
             border-bottom: 1px dashed #000;
             padding-bottom: 2px;
             font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
 
+          /* Every column except Item stays on one line — Sr/HSN/Qty/Rate/
+             Amt are all short, fixed-format values that should never
+             wrap. Item (below) is the one exception, capped at 2 lines. */
           .sf-r-items td {
+            font-weight: 700;
             padding: 2px 0;
             vertical-align: top;
-            word-wrap: break-word;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
 
           .sf-r-items .num {
@@ -574,9 +587,31 @@ function ReceiptContent({ bill }) {
             white-space: nowrap;
           }
 
-          .sf-r-particulars {
+          /* HSN is never truncated — always shown in full on one line. */
+          .sf-r-items td.sf-r-hsn {
+            overflow: visible;
+            text-overflow: clip;
+            white-space: nowrap;
+            letter-spacing: -0.2px;
+          }
+
+          /* The td itself must stay a real table-cell (display:-webkit-box on
+             a td breaks the fixed column width), so the 2-line clamp lives
+             on an inner div instead. */
+          .sf-r-items td.sf-r-particulars {
+            white-space: normal;
+            text-align: center;
+          }
+
+          .sf-r-clamp {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
             word-break: break-word;
             overflow-wrap: anywhere;
+            line-height: 1.25;
+            max-height: 2.5em;
           }
 
           /* ================================
@@ -728,32 +763,30 @@ function ReceiptContent({ bill }) {
         <table className="text-center">
           <thead className="text-center">
             <tr className="text-center">
-              <th className="text-center" style={{ width: "5%" }}>
+              <th className="text-center" style={{ width: "6%" }}>
                 Sr
               </th>
 
-            
-
-              <th className="text-center" style={{ width: "20%", whiteSpace: "nowrap" }}>
+              <th className="text-center" style={{ width: "22%" }}>
                 HSN
               </th>
 
-              <th className="text-center" style={{ width: "25%" }}>
+              <th className="text-center" style={{ width: "26%" }}>
                 Item
               </th>
-  <th className="text-center" style={{ width: "5%" }}>
+              <th className="text-center" style={{ width: "8%" }}>
                 Qty
               </th>
               <th
                 className="text-end num "
-                style={{ width: "10%" }}
+                style={{ width: "17%" }}
               >
                 Rate
               </th>
 
               <th
                 className="text-end num "
-                style={{ width: "15%" }}
+                style={{ width: "21%" }}
               >
                 Amt
               </th>
@@ -769,12 +802,12 @@ function ReceiptContent({ bill }) {
 
           
 
-                <td style={{ whiteSpace: "nowrap" }}>
+                <td className="sf-r-hsn">
                   {it.hsn}
                 </td>
 
                 <td className="sf-r-particulars">
-                  {it.particulars}
+                  <div className="sf-r-clamp">{it.particulars}</div>
                 </td>
       <td>
                   {it.qty}
