@@ -452,12 +452,12 @@ function ReceiptContent({ bill }) {
               Top    = 2mm
               Left   = 2mm
               Right  = 2mm
-              Bottom = 50mm
+              Bottom = 35mm
 
               Bottom padding creates approximately
-              5cm extra blank paper before cutting.
+              3.5cm extra blank paper before cutting.
             */
-            padding: 2mm 2mm 50mm;
+            padding: 2mm 2mm 35mm;
 
             box-sizing: border-box;
 
