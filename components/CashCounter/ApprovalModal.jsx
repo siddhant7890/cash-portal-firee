@@ -542,17 +542,20 @@ export default function ApprovalModal({
 
     // Discount comes off the final, tax-inclusive invoice amount (e.g. a
     // ₹120 bill with ₹20 discount becomes a ₹100 final amount) — not off
-    // the taxable amount. Taxable/CGST/SGST are then backed out of that
-    // discounted final amount using the bill's own GST rate, so tax is
-    // only charged on what the customer actually ends up paying.
+    // the taxable amount. Taxable/CGST/SGST are backed out of that exact
+    // discounted amount FIRST (using the bill's own GST rate), then added
+    // back up — only that sum gets rounded to a whole rupee, and the
+    // round-off is whatever that last rounding step added or removed.
     const discount = Math.max(0, Number(discountAmount) || 0);
     const afterDiscount = Math.max(0, original - discount);
-    const rounded = roundToNearestRupee(afterDiscount);
-    const roundOff = Number((rounded - afterDiscount).toFixed(2));
 
-    const taxableAfterDiscount = gstRate > 0 ? rounded / (1 + gstRate) : rounded;
+    const taxableAfterDiscount = gstRate > 0 ? afterDiscount / (1 + gstRate) : afterDiscount;
     const cgst = taxableAfterDiscount * cgstRate;
     const sgst = taxableAfterDiscount * sgstRate;
+    const preRoundTotal = taxableAfterDiscount + cgst + sgst;
+
+    const rounded = roundToNearestRupee(preRoundTotal);
+    const roundOff = Number((rounded - preRoundTotal).toFixed(2));
 
     return {
       original,
