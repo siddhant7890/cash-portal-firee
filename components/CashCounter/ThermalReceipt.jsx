@@ -286,6 +286,7 @@
 
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 const COMPANY = {
   name: "SHAMA FIREWORKS INDUSTRIES",
@@ -400,8 +401,10 @@ function ReceiptContent({ bill }) {
           html,
           body {
             width: 80mm;
+            height: auto !important;
             margin: 0;
             padding: 0;
+            overflow: visible !important;
           }
 
           body {
@@ -409,13 +412,20 @@ function ReceiptContent({ bill }) {
             padding: 0 !important;
           }
 
-          body * {
-            visibility: hidden !important;
-          }
-
-          .sf-receipt,
-          .sf-receipt * {
-            visibility: visible !important;
+          /*
+            The rest of the app is removed with display:none — NOT
+            visibility:hidden. A hidden ancestor still occupies its full
+            layout box, and a receipt positioned absolute/relative to it
+            renders inconsistently (or not at all) on several mobile
+            "print to PDF" engines — blank PDFs on tablets/older phones
+            while desktop Chrome, with its more complete print engine,
+            still rendered it fine. #__next is Next.js's whole app root;
+            the receipt itself is portaled straight into <body> (see
+            ReceiptPortalRoot below) so it's a sibling of #__next, not a
+            descendant, and stays visible when #__next is hidden.
+          */
+          #__next {
+            display: none !important;
           }
 
           * {
@@ -424,18 +434,18 @@ function ReceiptContent({ bill }) {
           }
 
           .sf-receipt {
-            position: absolute;
-            top: 0;
+            /* Normal document flow, centered with margin auto, instead of
+               position:absolute — that avoided depending on any
+               positioned ancestor for the same cross-device reason above. */
+            display: block;
+            position: static;
+            margin: 0 auto;
 
             /*
-              TM-T82 is an 80mm printer. Centering a 76mm content block
-              (instead of pinning it to left:0) splits the leftover 4mm
-              evenly as a 2mm margin on each side, so a slightly
-              misaligned print head doesn't clip the left edge and the
-              content isn't left-shifted with dead space on the right.
+              TM-T82 is an 80mm printer. A centered 76mm content block
+              leaves a 2mm margin on each side so a slightly misaligned
+              print head doesn't clip the left edge.
             */
-            left: 50%;
-            transform: translateX(-50%);
             width: 76mm;
 
             /*
@@ -992,6 +1002,15 @@ function ReceiptContent({ bill }) {
 //
 // =====================================================
 
+// Mounts the receipt as a direct child of <body> (client-side only) so the
+// print CSS can hide the entire app root (#__next) without hiding this too.
+function ReceiptPortalRoot({ bill }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+  return createPortal(<ReceiptContent bill={bill} />, document.body);
+}
+
 export function useThermalPrint() {
   const [bill, setBill] = useState(null);
 
@@ -1039,7 +1058,7 @@ export function useThermalPrint() {
   return {
     printBill: setBill,
     ReceiptPortal: (
-      <ReceiptContent bill={bill} />
+      <ReceiptPortalRoot bill={bill} />
     ),
   };
 }
