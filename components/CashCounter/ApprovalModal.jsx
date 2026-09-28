@@ -468,6 +468,23 @@ function roundToNearestRupee(value) {
   return Math.round(n);
 }
 
+// formatINR rounds to a whole rupee — the tax breakdown (taxable/GST/final)
+// needs paise precision instead, so the numbers actually add up and the
+// round-off amount (see below) means something.
+function formatINR2(amount) {
+  const n = Number(amount) || 0;
+  return `₹${n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function formatSignedINR2(amount) {
+  const n = Number(amount) || 0;
+  const sign = n > 0 ? "+" : n < 0 ? "−" : "";
+  return `${sign}${formatINR2(Math.abs(n))}`;
+}
+
 export default function ApprovalModal({
   bill,
   mode: initialMode,
@@ -883,32 +900,31 @@ export default function ApprovalModal({
 
           <div className="sf-modal-bill-row">
             <span>Taxable Amount</span>
-            <span className="mono">{formatINR(calculations.taxableAfterDiscount)}</span>
+            <span className="mono">{formatINR2(calculations.taxableAfterDiscount)}</span>
           </div>
 
           <div className="sf-modal-bill-row">
             <span>CGST</span>
-            <span className="mono">{formatINR(calculations.cgst)}</span>
+            <span className="mono">{formatINR2(calculations.cgst)}</span>
           </div>
 
           <div className="sf-modal-bill-row">
             <span>SGST</span>
-            <span className="mono">{formatINR(calculations.sgst)}</span>
+            <span className="mono">{formatINR2(calculations.sgst)}</span>
           </div>
 
           {calculations.roundOff !== 0 && (
             <div className="sf-modal-bill-row">
               <span>Round off</span>
               <span className="mono">
-                {calculations.roundOff > 0 ? "+" : ""}
-                {formatINR(calculations.roundOff)}
+                {formatSignedINR2(calculations.roundOff)}
               </span>
             </div>
           )}
 
           <div className="sf-modal-bill-row total">
             <span>Final Payable</span>
-            <span className="mono">{formatINR(calculations.rounded)}</span>
+            <span className="mono">{formatINR2(calculations.rounded)}</span>
           </div>
         </div>
 

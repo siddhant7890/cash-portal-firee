@@ -1411,15 +1411,6 @@ function timeAgo(iso) {
   return `${Math.round(mins / 60)} hr ago`;
 }
 
-function splitGroup(id) {
-  const str = String(id);
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
-  }
-  return hash % 2 === 0 ? "A" : "B";
-}
-
 // Bills are routed to a shop tab purely by their bill-number prefix —
 // "SFA..." belongs to Shop AKR, "SFR..." belongs to Shop 14-15.
 const SHOP_TABS = [
@@ -1443,9 +1434,9 @@ function matchesSearch(bill, query) {
   const q = query.trim().toLowerCase();
   const token = String(bill.tokenNumber ?? "");
   return (
+    token.toLowerCase().includes(q) ||
     bill.billNo.toLowerCase().includes(q) ||
-    bill.customerName.toLowerCase().includes(q) ||
-    token.toLowerCase().includes(q)
+    bill.customerName.toLowerCase().includes(q)
   );
 }
 
@@ -1484,7 +1475,7 @@ function PendingBlock({ label, bills, search, onSearchChange, onApprove }) {
           <path d="M21 21l-4.3-4.3" />
         </svg>
         <input
-          placeholder="Search bill no., customer, or token"
+          placeholder="Search by token, bill no., or customer"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
         />
@@ -1573,8 +1564,7 @@ export default function CashCounterPage() {
   const [conflictMessage, setConflictMessage] = useState(null);
   const [lastRefreshed, setLastRefreshed] = useState(Date.now());
   const [activeShop, setActiveShop] = useState(SHOP_TABS[0].key);
-  const [searchA, setSearchA] = useState("");
-  const [searchB, setSearchB] = useState("");
+  const [search, setSearch] = useState("");
   const pollRef = useRef(null);
 
   const { printBill, ReceiptPortal } = useThermalPrint();
@@ -1600,16 +1590,10 @@ export default function CashCounterPage() {
     return () => clearInterval(pollRef.current);
   }, [user, refresh]);
 
-  const { blockA, blockB } = useMemo(() => {
-    const a = [];
-    const b = [];
-    pending
-      .filter((bill) => matchesShop(bill, activeShop))
-      .forEach((bill) =>
-        splitGroup(bill.id) === "A" ? a.push(bill) : b.push(bill),
-      );
-    return { blockA: a, blockB: b };
-  }, [pending, activeShop]);
+  const visiblePending = useMemo(
+    () => pending.filter((bill) => matchesShop(bill, activeShop)),
+    [pending, activeShop],
+  );
 
   const visibleApproved = useMemo(
     () => approvedThisSession.filter((b) => matchesShop(b, activeShop)),
@@ -1830,30 +1814,16 @@ async function handleUpdate(bill, payload) {
         }}
       >
         Updated {secondsAgo <= 1 ? "just now" : `${secondsAgo}s ago`} · auto-refreshes
-        every {POLL_MS / 1000}s · pending bills are split into two counters below so
-        both cashiers can work independently
+        every {POLL_MS / 1000}s
       </div>
 
-      <div className="row g-3">
-        <div className="col-lg-6">
-          <PendingBlock
-            label="Counter 1"
-            bills={blockA}
-            search={searchA}
-            onSearchChange={setSearchA}
-            onApprove={openModal}
-          />
-        </div>
-        <div className="col-lg-6">
-          <PendingBlock
-            label="Counter 2"
-            bills={blockB}
-            search={searchB}
-            onSearchChange={setSearchB}
-            onApprove={openModal}
-          />
-        </div>
-      </div>
+      <PendingBlock
+        label="Pending Bills"
+        bills={visiblePending}
+        search={search}
+        onSearchChange={setSearch}
+        onApprove={openModal}
+      />
 
       {loading && (
         <div style={{ fontSize: 13, color: "var(--ink-soft)", marginTop: 12 }}>

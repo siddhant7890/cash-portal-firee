@@ -295,15 +295,30 @@ const COMPANY = {
   gstin: "27AAMFS0917L1ZT",
 };
 
-// Print-only formatting — all the underlying math stays in decimals (see
-// ApprovalModal), this just rounds to the nearest rupee for what actually
-// gets printed on the receipt, so there's no ".00"/paisa clutter on paper.
+// Print-only formatting — item rates/amounts round to the nearest rupee so
+// the items table stays uncluttered.
 function money(amount) {
   const rounded = Math.round(Number(amount) || 0);
   return "₹" + rounded.toLocaleString("en-IN", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   });
+}
+
+// The tax breakdown (taxable/CGST/SGST/total) keeps paise precision so the
+// figures actually add up, and so the round-off line below means something.
+function money2(amount) {
+  const n = Number(amount) || 0;
+  return "₹" + n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function moneySigned2(amount) {
+  const n = Number(amount) || 0;
+  const sign = n > 0 ? "+" : n < 0 ? "−" : "";
+  return sign + money2(Math.abs(n));
 }
 
 function formatDate(dateStr) {
@@ -885,27 +900,36 @@ function ReceiptContent({ bill }) {
           <span style={{ display: "flex", flexDirection: "column" }}>
             <span>Taxable</span>
             <span>Amount</span>
-            <span className="sf-r-bold mt-1">{money(taxableAmount)}</span>
+            <span className="sf-r-bold mt-1">{money2(taxableAmount)}</span>
           </span>
 
           <span style={{ display: "flex", flexDirection: "column", textAlign: "center" }}>
             <span>CGST </span>
                  <span>@9%</span>
-            <span className="sf-r-bold mt-1">{money(cgst)}</span>
+            <span className="sf-r-bold mt-1">{money2(cgst)}</span>
           </span>
 
           <span style={{ display: "flex", flexDirection: "column", textAlign: "center" }}>
             <span>SGST</span>
                  <span>@9%</span>
-            <span className="sf-r-bold mt-1">{money(sgst)}</span>
+            <span className="sf-r-bold mt-1">{money2(sgst)}</span>
           </span>
 
           <span style={{ display: "flex", flexDirection: "column", textAlign: "right" }}>
             <span>Total </span>
                  <span>Amount</span>
-            <span className="sf-r-bold mt-1">{money(totalAmount)}</span>
+            <span className="sf-r-bold mt-1">{money2(totalAmount)}</span>
           </span>
         </div>
+
+        {/* ROUND OFF — shown as a signed paise value so it's clear how the
+            exact total maps to the rupee amount actually collected. */}
+        {Number(bill.round_off_amount ?? bill.RoundOff) !== 0 && (
+          <div className="sf-r-row">
+            <span>Round Off</span>
+            <span>{moneySigned2(bill.round_off_amount ?? bill.RoundOff)}</span>
+          </div>
+        )}
 
         <div className="sf-r-hr" />
 
@@ -917,7 +941,7 @@ function ReceiptContent({ bill }) {
           </span>
 
           <span>
-            {money(totalAmount)}
+            {money2(totalAmount)}
           </span>
         </div>
 
