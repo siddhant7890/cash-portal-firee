@@ -972,7 +972,11 @@ function ReceiptContent({ bill }) {
         >
           Designed &amp; developed by Siddhant Jain - 9423115251
         </div>
-        
+             <div
+          style={{ marginTop: 40, fontSize: 8.5 }}
+        >
+        -
+        </div>
 
       </div>
       </>
