@@ -510,7 +510,12 @@ export default function ApprovalModal({
 
   useEffect(() => {
     if (!bill) return;
-    setCustomerName(bill.customerName || "");
+    // "Walk-in" / "-" are placeholder values from the backend, not a real
+    // name — leaving the field blank instead lets the cashier just type
+    // the name straight away instead of clearing it first.
+    const rawName = (bill.customerName || "").trim();
+    const isPlaceholderName = !rawName || rawName === "-" || /^walk[\s-]?in$/i.test(rawName);
+    setCustomerName(isPlaceholderName ? "" : rawName);
     setGstin(bill.gstNumber || bill.gstin || "");
     setMobileNumber(bill.customerMobile || "");
     setDiscountAmount("");
