@@ -1744,6 +1744,7 @@ async function handleUpdate(bill, payload) {
       // as a harmless belt-and-braces fallback.
       total_amount: payload.total_amount,
       grandTotal: payload.grandTotal,
+      round_off: payload.RoundOff ?? payload.round_off_amount ?? 0,
       RoundOff: payload.RoundOff ?? 0,
       round_off_amount: payload.RoundOff ?? payload.round_off_amount ?? 0,
       paymentMode: payload.paymentMode,
