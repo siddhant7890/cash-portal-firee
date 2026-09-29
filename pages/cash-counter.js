@@ -1402,6 +1402,14 @@ import { formatINR } from "@/lib/calc";
 const POLL_MS =
   (Number(process.env.NEXT_PUBLIC_POLL_INTERVAL_SECONDS) || 10) * 1000;
 
+// Explicit "+0.04" / "-0.34" sign so a positive round-off doesn't read as
+// a bare, ambiguous number — JS/JSON never prints a leading "+" on its own.
+function signedRoundOff(value) {
+  const n = Number(value) || 0;
+  const sign = n > 0 ? "+" : n < 0 ? "-" : "";
+  return `${sign}${Math.abs(n).toFixed(2)}`;
+}
+
 function timeAgo(iso) {
   const mins = Math.max(
     1,
@@ -1744,7 +1752,7 @@ async function handleUpdate(bill, payload) {
       // as a harmless belt-and-braces fallback.
       total_amount: payload.total_amount,
       grandTotal: payload.grandTotal,
-      round_off: payload.RoundOff ?? payload.round_off_amount ?? 0,
+      round_off: signedRoundOff(payload.RoundOff ?? payload.round_off_amount ?? 0),
       RoundOff: payload.RoundOff ?? 0,
       round_off_amount: payload.RoundOff ?? payload.round_off_amount ?? 0,
       paymentMode: payload.paymentMode,
