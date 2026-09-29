@@ -468,6 +468,23 @@ function roundToNearestRupee(value) {
   return Math.round(n);
 }
 
+// Taxable amount: truncated to 2 decimals, never rounded up
+// (160170.3389 -> 160170.33, not .34) — the conservative convention for
+// the base tax figure.
+function truncate2(value) {
+  const n = Number(value) || 0;
+  return Math.floor(n * 100) / 100;
+}
+
+// CGST/SGST: properly rounded to 2 decimals (14415.3297 -> 14415.33, not
+// truncated to 14415.32) — computed as a % of the already-truncated
+// taxable amount above. Whatever gap the combination of these two leaves
+// versus the whole-rupee amount actually charged shows up as Round Off.
+function round2(value) {
+  const n = Number(value) || 0;
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+
 // formatINR rounds to a whole rupee — the tax breakdown (taxable/GST/final)
 // needs paise precision instead, so the numbers actually add up and the
 // round-off amount (see below) means something.
@@ -529,7 +546,12 @@ export default function ApprovalModal({
   const calculations = useMemo(() => {
     if (!bill) return null;
 
-    const original = Number(bill.grandTotal) || 0;
+    // The backend's stored total can carry hidden paisa (e.g. ₹190001.24)
+    // that never shows anywhere clean — round it to a whole rupee first,
+    // and do every calculation below (discount, taxable, CGST/SGST) off
+    // that clean number, so a ₹190001.24 bill is treated as exactly
+    // ₹190001 throughout instead of leaking odd paise into the breakdown.
+    const original = roundToNearestRupee(Number(bill.grandTotal) || 0);
     const originalTaxable = Number(bill.taxableTotal) || 0;
 
     // GST is always treated as a flat 9% CGST + 9% SGST (18% total) here,
@@ -542,19 +564,23 @@ export default function ApprovalModal({
 
     // Discount comes off the final, tax-inclusive invoice amount (e.g. a
     // ₹120 bill with ₹20 discount becomes a ₹100 final amount) — not off
-    // the taxable amount. Taxable/CGST/SGST are backed out of that exact
-    // discounted amount FIRST (using the bill's own GST rate), then added
-    // back up — only that sum gets rounded to a whole rupee, and the
-    // round-off is whatever that last rounding step added or removed.
+    // the taxable amount. Taxable amount is backed out of that exact
+    // discounted amount FIRST (using the bill's own GST rate) and
+    // truncated to 2 decimals; CGST/SGST are then a % of that (already
+    // truncated) taxable amount, properly rounded. Whatever gap the sum
+    // of all three leaves versus the whole-rupee amount charged is the
+    // Round Off line (e.g. ₹189001 − ₹1000 discount → taxable 160170.33,
+    // CGST/SGST 14415.33 each → sum 189000.99 → Round Off +0.01).
     const discount = Math.max(0, Number(discountAmount) || 0);
     const afterDiscount = Math.max(0, original - discount);
 
-    const taxableAfterDiscount = gstRate > 0 ? afterDiscount / (1 + gstRate) : afterDiscount;
-    const cgst = taxableAfterDiscount * cgstRate;
-    const sgst = taxableAfterDiscount * sgstRate;
+    const rawTaxable = gstRate > 0 ? afterDiscount / (1 + gstRate) : afterDiscount;
+    const taxableAfterDiscount = truncate2(rawTaxable);
+    const cgst = round2(taxableAfterDiscount * cgstRate);
+    const sgst = round2(taxableAfterDiscount * sgstRate);
     const preRoundTotal = taxableAfterDiscount + cgst + sgst;
 
-    const rounded = roundToNearestRupee(preRoundTotal);
+    const rounded = roundToNearestRupee(afterDiscount);
     const roundOff = Number((rounded - preRoundTotal).toFixed(2));
 
     return {
@@ -873,7 +899,7 @@ export default function ApprovalModal({
 
           <div className="sf-modal-bill-row">
             <span>Total Invoice Amount</span>
-            <span className="mono">{formatINR(calculations.original)}</span>
+            <span className="mono">{formatINR2(calculations.original)}</span>
           </div>
 
           {!isReject && (
@@ -901,7 +927,7 @@ export default function ApprovalModal({
             <div className="sf-modal-bill-row">
               <span>Discount</span>
               <span className="mono" style={{ color: "var(--danger)" }}>
-                −{formatINR(calculations.discount)}
+                −{formatINR2(calculations.discount)}
               </span>
             </div>
           )}

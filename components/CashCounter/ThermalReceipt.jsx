@@ -334,23 +334,23 @@ function formatDate(dateStr) {
   return `${dd}/${mm}/${d.getFullYear()} ${hh}:${min}`;
 }
 
-// Same normalization logic as the PDF generator.
-// Rate is derived as total_amount / qty since the API's
-// raw "rate" field is tax-exclusive.
+// Rate × Qty, straight from the item's own stored fields — no reverse
+// derivation from totalAmount ÷ qty, no taxable/GST math involved here.
 // Serial number is the item's position in the list.
 function getBillItems(bill) {
   const raw = bill.items || [];
 
   return raw.map((item, idx) => {
     const qty = Number(item.qty) || 1;
-    const amount = Number(item.totalAmount ?? 0);
+    const rate = Number(item.rate) || 0;
+    const amount = rate * qty;
 
     return {
       sr: idx + 1,
       qty,
       hsn: item.hsnCode ?? "-",
       particulars: item.productName ?? "-",
-      rateIncGst: Math.round((amount / qty) * 100) / 100,
+      rateIncGst: rate,
       amount,
     };
   });
@@ -866,7 +866,7 @@ function ReceiptContent({ bill }) {
           </span>
 
           <span>
-            {money(totalAmount + discount)}
+            {money2(totalAmount + discount)}
           </span>
         </div>
 
@@ -879,7 +879,7 @@ function ReceiptContent({ bill }) {
             </span>
 
             <span>
-              -{money(discount)}
+              -{money2(discount)}
             </span>
           </div>
         )}
