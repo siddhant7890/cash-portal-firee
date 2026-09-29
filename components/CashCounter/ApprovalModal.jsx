@@ -657,6 +657,11 @@ export default function ApprovalModal({
       taxable_amount: num(calculations.taxableAfterDiscount),
       cgst_amount: num(calculations.cgst),
       sgst_amount: num(calculations.sgst),
+      // total_amount is the backend's actual field name (matches its own
+      // GET response and every other snake_case money field above);
+      // grandTotal is kept alongside it only for the local finalBill/print
+      // object in cash-counter.js, which still reads that key.
+      total_amount: num(calculations.rounded),
       grandTotal: num(calculations.rounded),
       RoundOff,
       round_off_amount: RoundOff,

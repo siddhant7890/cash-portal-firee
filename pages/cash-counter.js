@@ -1739,10 +1739,10 @@ async function handleUpdate(bill, payload) {
       sgst_amount: payload.sgst_amount,
       // Every other money field above is snake_case, matching what
       // normalizeBill() reads back on GET (b.total_amount -> grandTotal)
-      // — total_amount is the field the backend actually expects. Sending
-      // grandTotal too is just a harmless belt-and-braces fallback in case
-      // something else on the backend still reads the old camelCase key.
-      total_amount: payload.grandTotal,
+      // — total_amount is the field the backend actually expects, sent
+      // straight from the payload now. grandTotal stays alongside it only
+      // as a harmless belt-and-braces fallback.
+      total_amount: payload.total_amount,
       grandTotal: payload.grandTotal,
       RoundOff: payload.RoundOff ?? 0,
       round_off_amount: payload.RoundOff ?? payload.round_off_amount ?? 0,
