@@ -334,23 +334,26 @@ function formatDate(dateStr) {
   return `${dd}/${mm}/${d.getFullYear()} ${hh}:${min}`;
 }
 
-// Rate × Qty, straight from the item's own stored fields — no reverse
-// derivation from totalAmount ÷ qty, no taxable/GST math involved here.
+// Amount comes from the item's own stored totalAmount (tax-inclusive,
+// the same figure the bill's Total Invoice Amount is built from) — NOT
+// item.rate × qty, which is tax-exclusive on this backend and would make
+// the printed items no longer add up to the bill total. Rate is instead
+// derived back as amount ÷ qty purely for display, so it reads as a
+// tax-inclusive per-unit price consistent with the rest of the receipt.
 // Serial number is the item's position in the list.
 function getBillItems(bill) {
   const raw = bill.items || [];
 
   return raw.map((item, idx) => {
     const qty = Number(item.qty) || 1;
-    const rate = Number(item.rate) || 0;
-    const amount = rate * qty;
+    const amount = Number(item.totalAmount ?? 0);
 
     return {
       sr: idx + 1,
       qty,
       hsn: item.hsnCode ?? "-",
       particulars: item.productName ?? "-",
-      rateIncGst: rate,
+      rateIncGst: Math.round((amount / qty) * 100) / 100,
       amount,
     };
   });

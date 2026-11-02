@@ -468,18 +468,10 @@ function roundToNearestRupee(value) {
   return Math.round(n);
 }
 
-// Taxable amount: truncated to 2 decimals, never rounded up
-// (160170.3389 -> 160170.33, not .34) — the conservative convention for
-// the base tax figure.
-function truncate2(value) {
-  const n = Number(value) || 0;
-  return Math.floor(n * 100) / 100;
-}
-
-// CGST/SGST: properly rounded to 2 decimals (14415.3297 -> 14415.33, not
-// truncated to 14415.32) — computed as a % of the already-truncated
-// taxable amount above. Whatever gap the combination of these two leaves
-// versus the whole-rupee amount actually charged shows up as Round Off.
+// Taxable amount and CGST/SGST are all rounded properly to 2 decimals
+// (847.457627 -> 847.46, not 847.45) — not truncated. Whatever gap this
+// still leaves versus the whole-rupee amount actually charged shows up as
+// the separate Round Off line.
 function round2(value) {
   const n = Number(value) || 0;
   return Math.round((n + Number.EPSILON) * 100) / 100;
@@ -565,17 +557,17 @@ export default function ApprovalModal({
     // Discount comes off the final, tax-inclusive invoice amount (e.g. a
     // ₹120 bill with ₹20 discount becomes a ₹100 final amount) — not off
     // the taxable amount. Taxable amount is backed out of that exact
-    // discounted amount FIRST (using the bill's own GST rate) and
-    // truncated to 2 decimals; CGST/SGST are then a % of that (already
-    // truncated) taxable amount, properly rounded. Whatever gap the sum
-    // of all three leaves versus the whole-rupee amount charged is the
-    // Round Off line (e.g. ₹189001 − ₹1000 discount → taxable 160170.33,
-    // CGST/SGST 14415.33 each → sum 189000.99 → Round Off +0.01).
+    // discounted amount FIRST (using the bill's own GST rate), properly
+    // rounded to 2 decimals; CGST/SGST are then a % of that taxable
+    // amount, also properly rounded. Whatever gap the sum of all three
+    // leaves versus the whole-rupee amount charged is the Round Off line
+    // (e.g. ₹1092 − ₹92 discount → taxable 847.46, CGST/SGST 76.27 each
+    // → sum 1000.00 → Round Off 0).
     const discount = Math.max(0, Number(discountAmount) || 0);
     const afterDiscount = Math.max(0, original - discount);
 
     const rawTaxable = gstRate > 0 ? afterDiscount / (1 + gstRate) : afterDiscount;
-    const taxableAfterDiscount = truncate2(rawTaxable);
+    const taxableAfterDiscount = round2(rawTaxable);
     const cgst = round2(taxableAfterDiscount * cgstRate);
     const sgst = round2(taxableAfterDiscount * sgstRate);
     const preRoundTotal = taxableAfterDiscount + cgst + sgst;
