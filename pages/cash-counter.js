@@ -1753,8 +1753,8 @@ async function handleUpdate(bill, payload) {
       total_amount: payload.total_amount,
       grandTotal: payload.grandTotal,
       round_off: signedRoundOff(payload.RoundOff ?? payload.round_off_amount ?? 0),
-      RoundOff: payload.RoundOff ?? 0,
-      round_off_amount: payload.RoundOff ?? payload.round_off_amount ?? 0,
+      // RoundOff: payload.RoundOff ?? 0,
+      // round_off_amount: payload.RoundOff ?? payload.round_off_amount ?? 0,
       paymentMode: payload.paymentMode,
       total_cash: payload.total_cash,   // ← add
   total_upi: payload.total_upi,
