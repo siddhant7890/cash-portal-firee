@@ -516,6 +516,7 @@ export default function ApprovalModal({
   const [reviewed, setReviewed] = useState(false);
   const [hasUpdated, setHasUpdated] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [showItems, setShowItems] = useState(false);
 
   useEffect(() => {
     if (!bill) return;
@@ -533,6 +534,7 @@ export default function ApprovalModal({
     setUpiAmount("");
     setReviewed(false);
     setHasUpdated(false);
+    setShowItems(false);
   }, [bill, initialMode]);
 
   const calculations = useMemo(() => {
@@ -882,10 +884,60 @@ export default function ApprovalModal({
             <span>Sales person</span>
             <span>{bill.salesPerson}</span>
           </div>
-          <div className="sf-modal-bill-row">
+          <div className="sf-modal-bill-row" style={{ alignItems: "center" }}>
             <span>Items</span>
-            <span>{bill.itemCount}</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {bill.itemCount}
+              {Array.isArray(bill.items) && bill.items.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowItems((v) => !v)}
+                  style={{
+                    border: "none",
+                    background: "none",
+                    color: "var(--brand, #b45309)",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    textDecoration: "underline",
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
+                >
+                  {showItems ? "Hide items" : "View items"}
+                </button>
+              )}
+            </span>
           </div>
+
+          {showItems && Array.isArray(bill.items) && bill.items.length > 0 && (
+            <div
+              className="sf-table-wrap mb-2"
+              style={{ maxHeight: 200, overflowY: "auto" }}
+            >
+              <table className="sf-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>HSN</th>
+                    <th>Qty</th>
+                    <th>Rate</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bill.items.map((it) => (
+                    <tr key={it.id}>
+                      <td>{it.productName}</td>
+                      <td className="mono">{it.hsnCode || "-"}</td>
+                      <td className="mono">{it.qty}</td>
+                      <td className="mono">{formatINR(it.rate)}</td>
+                      <td className="mono">{formatINR(it.totalAmount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {bill.numberOfCartoon != null && (
             <div className="sf-modal-bill-row">
@@ -1200,17 +1252,6 @@ export default function ApprovalModal({
           )}
         </div>
       </div>
-
-      <style jsx>{`
-        .no-spinner::-webkit-outer-spin-button,
-        .no-spinner::-webkit-inner-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        .no-spinner {
-          -moz-appearance: textfield;
-        }
-      `}</style>
     </div>
   );
 }

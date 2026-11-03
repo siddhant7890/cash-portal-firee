@@ -118,9 +118,19 @@ svg {
   border-radius: 8px;
   font-size: 14px;
   color: #c9bfda;
-  background: var(--night-soft);
+  background: transparent;
   border: none;
+  box-shadow: inset 3px 0 0 transparent;
+  cursor: pointer;
+  text-decoration: none;
+}
+.sf-nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.sf-nav-item.active {
+  background: var(--night-soft);
   box-shadow: inset 3px 0 0 var(--ember);
+  color: #ede7f5;
 }
 .sf-nav-item svg {
   width: 17px;
@@ -492,6 +502,22 @@ svg {
   background: var(--upi-soft);
   color: var(--upi);
 }
+.sf-status-pill.approved {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.sf-status-pill.rejected {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.sf-status-pill.approved {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.sf-status-pill.rejected {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
 .sf-review-badge {
   display: inline-flex;
   align-items: center;
@@ -694,6 +720,14 @@ svg {
   height: 16px;
   flex-shrink: 0;
   margin-top: 1px;
+}
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spinner {
+  -moz-appearance: textfield;
 }
 
 /* ---------- Login ---------- */

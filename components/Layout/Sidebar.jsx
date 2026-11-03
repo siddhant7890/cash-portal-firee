@@ -1,9 +1,37 @@
 import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/router";
 import { useAuth } from "@/context/AuthContext";
+
+const NAV_ITEMS = [
+  {
+    href: "/cash-counter",
+    label: "Cash Counter",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <rect x="2" y="7" width="20" height="12" rx="2" />
+        <circle cx="12" cy="13" r="2.5" />
+        <path d="M6 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2" />
+      </svg>
+    ),
+  },
+  {
+    href: "/cash-logs",
+    label: "Cash Logs",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <path d="M14 2v6h6" />
+        <path d="M8 13h8M8 17h8M8 9h2" />
+      </svg>
+    ),
+  },
+];
 
 export default function Sidebar() {
   const { user, logout } = useAuth() || {};
   const [open, setOpen] = useState(false);
+  const router = useRouter();
 
   const initials = (user?.name || "Cashier")
     .split(" ")
@@ -62,14 +90,17 @@ export default function Sidebar() {
         </div>
 
         <nav className="sf-nav">
-          <div className="sf-nav-item" onClick={() => setOpen(false)}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <rect x="2" y="7" width="20" height="12" rx="2" />
-              <circle cx="12" cy="13" r="2.5" />
-              <path d="M6 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2" />
-            </svg>
-            Cash Counter
-          </div>
+          {NAV_ITEMS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`sf-nav-item ${router.pathname === item.href ? "active" : ""}`}
+              onClick={() => setOpen(false)}
+            >
+              {item.icon}
+              {item.label}
+            </Link>
+          ))}
         </nav>
 
         <div className="sf-sidebar-foot">
