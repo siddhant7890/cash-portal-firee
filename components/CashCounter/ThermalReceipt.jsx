@@ -369,8 +369,22 @@ function getBillItems(bill) {
 // register the newly-inserted stylesheet before print() fired, so the
 // print engine found no rules telling it to hide the rest of the page and
 // printed the visible cash-portal UI instead of just the receipt.
+// A fixed item-row size works fine for a typical small bill, but a bill
+// with 60-80+ items needs to physically take up less length per row or it
+// can't fit on one page no matter how long the paper roll is allowed to
+// run — this shrinks font size/row padding/line-height as the item count
+// grows, instead of staying one size regardless of bill length.
+function itemsDensityFor(itemCount) {
+  if (itemCount > 60) return { fontSize: 7, padding: "1px 0", lineHeight: 1.05 };
+  if (itemCount > 40) return { fontSize: 7.8, padding: "1px 0", lineHeight: 1.1 };
+  if (itemCount > 25) return { fontSize: 8.8, padding: "1.5px 0", lineHeight: 1.15 };
+  if (itemCount > 15) return { fontSize: 9.6, padding: "1.5px 0", lineHeight: 1.2 };
+  return { fontSize: 10.5, padding: "2px 0", lineHeight: 1.25 };
+}
+
 function ReceiptContent({ bill }) {
   const items = bill ? getBillItems(bill) : [];
+  const density = itemsDensityFor(items.length);
 
   const totalAmount = Number(bill?.grandTotal) || 0;
   const taxableAmount = Number(bill?.taxableTotal) || 0;
@@ -584,7 +598,8 @@ function ReceiptContent({ bill }) {
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            font-size: 10.5px;
+            font-size: ${density.fontSize}px;
+            line-height: ${density.lineHeight};
             font-weight: 700;
             text-shadow:
               0.3px 0 0 currentColor,
@@ -625,7 +640,7 @@ function ReceiptContent({ bill }) {
              wrap. Item (below) is the one exception, capped at 2 lines. */
           .sf-r-items td {
             font-weight: 700;
-            padding: 2px 0;
+            padding: ${density.padding};
             vertical-align: top;
             white-space: nowrap;
             overflow: hidden;
@@ -660,8 +675,8 @@ function ReceiptContent({ bill }) {
             overflow: hidden;
             word-break: break-word;
             overflow-wrap: anywhere;
-            line-height: 1.25;
-            max-height: 2.5em;
+            line-height: ${density.lineHeight};
+            max-height: ${density.lineHeight * 2}em;
           }
 
           /* ================================
