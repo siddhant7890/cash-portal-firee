@@ -470,12 +470,15 @@ function ReceiptContent({ bill }) {
               Top    = 2mm
               Left   = 2mm
               Right  = 2mm
-              Bottom = 50mm
+              Bottom = 10mm
 
-              Bottom padding creates approximately
-              5cm extra blank paper before cutting.
+              Kept small on purpose — large bottom padding was adding
+              to the receipt's total height, and if the printer driver
+              caps the page at a fixed length rather than treating it as
+              a true continuous roll, that extra blank space was exactly
+              what tipped longer bills over onto a second page.
             */
-            padding: 2mm 2mm 50mm;
+            padding: 2mm 2mm 10mm;
 
             box-sizing: border-box;
 
@@ -517,7 +520,7 @@ function ReceiptContent({ bill }) {
 
           .sf-r-hr {
             border-top: 1px dashed #000;
-            margin: 4px 0;
+            margin: 2px 0;
             width: 100%;
           }
 
@@ -590,17 +593,19 @@ function ReceiptContent({ bill }) {
 
           /* @page { size: 80mm auto } already makes the whole receipt one
              tall page sized to its content — a long item list shouldn't
-             force a second page. These stop Chrome's print engine from
-             inserting its own break mid-row/mid-section if the content
-             gets long, which is the one part of this a web page can
-             control. If a second page still comes out physically, that's
-             the printer driver's paper-length setting treating this as a
-             fixed-length page instead of a continuous roll — see the
-             Windows printer's "Printing preferences" paper size, it needs
-             to be the 80mm continuous roll, not a capped length. */
-          .sf-r-items tr,
-          .sf-r-totals,
-          .sf-r-footer {
+             force a second page. Only item rows get page-break-inside:
+             avoid here (a small block, cheap to push down a few mm if it
+             doesn't fit). It's deliberately NOT applied to .sf-r-totals
+             or .sf-r-footer — "avoid" on a big block doesn't stop it
+             spilling onto a second page, it just stops it splitting and
+             pushes the WHOLE block there instead, which looks worse. If
+             a second page still appears physically, that means something
+             is treating this as a finite-height page rather than true
+             "auto" — almost certainly the printer driver's paper-length
+             setting. Check the Windows printer's "Printing preferences"
+             paper size: it needs to be the 80mm continuous roll, not a
+             capped length — that's the actual fix for a second page. */
+          .sf-r-items tr {
             page-break-inside: avoid;
             break-inside: avoid;
           }
@@ -682,7 +687,7 @@ function ReceiptContent({ bill }) {
           ================================= */
 
           .sf-r-footer {
-            margin-top: 6px;
+            margin-top: 3px;
             font-size: 12px;
           }
 
