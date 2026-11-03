@@ -588,6 +588,23 @@ function ReceiptContent({ bill }) {
               -0.3px 0 0 currentColor;
           }
 
+          /* @page { size: 80mm auto } already makes the whole receipt one
+             tall page sized to its content — a long item list shouldn't
+             force a second page. These stop Chrome's print engine from
+             inserting its own break mid-row/mid-section if the content
+             gets long, which is the one part of this a web page can
+             control. If a second page still comes out physically, that's
+             the printer driver's paper-length setting treating this as a
+             fixed-length page instead of a continuous roll — see the
+             Windows printer's "Printing preferences" paper size, it needs
+             to be the 80mm continuous roll, not a capped length. */
+          .sf-r-items tr,
+          .sf-r-totals,
+          .sf-r-footer {
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+
           .sf-r-items th {
             text-align: left;
             border-bottom: 1px dashed #000;
